@@ -1,0 +1,17 @@
+{
+  "name": "trade-copier-api",
+  "version": "1.0.0",
+  "description": "API Backend para Trade Copier Master-Slave",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["trade", "copier", "mt5", "forex"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}
