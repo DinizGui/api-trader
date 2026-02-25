@@ -53,10 +53,10 @@ app.post('/signal', (req, res) => {
       action
     } = req.body;
 
-    if (!master_id || !ticket || !symbol || !action) {
+    if (!master_id || !ticket || !action) {
       return res.status(400).json({
         success: false,
-        error: 'Campos obrigatórios: master_id, ticket, symbol, action'
+        error: 'Campos obrigatórios: master_id, ticket, action'
       });
     }
 
@@ -67,23 +67,31 @@ app.post('/signal', (req, res) => {
       });
     }
 
+    const needsSymbol = action === 'OPEN' || action === 'MODIFY';
+    if (needsSymbol && !symbol) {
+      return res.status(400).json({
+        success: false,
+        error: 'Campo symbol é obrigatório quando action é OPEN ou MODIFY'
+      });
+    }
+
     const signal = {
       id: generateSignalId(req.body),
       master_id: String(master_id),
       ticket: Number(ticket),
-      symbol: String(symbol),
+      symbol: symbol != null && symbol !== '' ? String(symbol) : null,
       type: type || 'BUY',
-      lot: parseFloat(lot) || 0.01,
-      open_price: parseFloat(open_price) || 0,
-      sl: parseFloat(sl) || 0,
-      tp: parseFloat(tp) || 0,
+      lot: parseFloat(lot) ?? 0.01,
+      open_price: parseFloat(open_price) ?? 0,
+      sl: parseFloat(sl) ?? 0,
+      tp: parseFloat(tp) ?? 0,
       action: action,
       created_at: new Date().toISOString()
     };
 
     signals.push(signal);
 
-    console.log(`[SIGNAL] Recebido: ${signal.action} ${signal.symbol} ticket=${signal.ticket} id=${signal.id}`);
+    console.log(`[SIGNAL] Recebido: ${signal.action} ${signal.symbol ?? '(sem symbol)'} ticket=${signal.ticket} id=${signal.id}`);
 
     res.json({ success: true, signal_id: signal.id });
   } catch (err) {
