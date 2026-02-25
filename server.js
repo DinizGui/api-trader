@@ -1,9 +1,4 @@
-/**
- * Trade Copier API - Backend Node.js
- * 
- * Recebe sinais do Master e distribui para Slaves.
- * Controle de execução por slave (cada sinal executado apenas 1x por slave).
- */
+
 
 const express = require('express');
 const cors = require('cors');
@@ -11,37 +6,22 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+
 app.use(cors());
 app.use(express.json());
 
-// =============================================================================
-// Armazenamento em memória (substituir por banco em produção)
-// =============================================================================
-
-/** Lista de sinais recebidos do Master - cada sinal tem ID único */
 const signals = [];
 
-/** Controle de execução: slaveId -> Set de signalIds já executados */
-const executedBySlave = new Map(); // slaveId -> Set<signalId>
+const executedBySlave = new Map(); 
 
-/** ID incremental para sinais */
+
 let nextSignalId = 1;
 
-// =============================================================================
-// Utilitários
-// =============================================================================
-
-/**
- * Gera ID único para o sinal (evita duplicação por ticket+action+timestamp)
- */
 function generateSignalId(signal) {
   return `sig_${signal.master_id}_${signal.ticket}_${signal.action}_${Date.now()}`;
 }
 
-/**
- * Registra que um slave executou um sinal (evita duplicação)
- */
+
 function markAsExecuted(slaveId, signalId) {
   if (!executedBySlave.has(slaveId)) {
     executedBySlave.set(slaveId, new Set());
@@ -49,28 +29,16 @@ function markAsExecuted(slaveId, signalId) {
   executedBySlave.get(slaveId).add(signalId);
 }
 
-/**
- * Verifica se o slave já executou este sinal
- */
 function wasExecuted(slaveId, signalId) {
   return executedBySlave.has(slaveId) && executedBySlave.get(slaveId).has(signalId);
 }
 
-/**
- * Retorna sinais pendentes para um slave (ainda não executados)
- */
+
 function getPendingSignals(slaveId) {
   return signals.filter(s => !wasExecuted(slaveId, s.id));
 }
 
-// =============================================================================
-// Endpoints
-// =============================================================================
 
-/**
- * POST /signal
- * Master envia novo sinal (abertura, fechamento ou modificação)
- */
 app.post('/signal', (req, res) => {
   try {
     const {
@@ -85,7 +53,6 @@ app.post('/signal', (req, res) => {
       action
     } = req.body;
 
-    // Validação mínima
     if (!master_id || !ticket || !symbol || !action) {
       return res.status(400).json({
         success: false,
@@ -125,10 +92,7 @@ app.post('/signal', (req, res) => {
   }
 });
 
-/**
- * GET /signal/:slaveId
- * Slave consulta sinais pendentes (ainda não executados por ele)
- */
+
 app.get('/signal/:slaveId', (req, res) => {
   try {
     const slaveId = req.params.slaveId;
@@ -150,15 +114,6 @@ app.get('/signal/:slaveId', (req, res) => {
   }
 });
 
-/**
- * POST /signal/:slaveId/executed
- * Slave confirma que executou um sinal (evita reexecução)
- * Alternativa: podemos considerar que o GET já retorna os pendentes e o Slave
- * confirma após executar. Aqui usamos abordagem de "consumo": ao retornar
- * no GET, o Slave marca como executado internamente após processar.
- * 
- * Para simplificar: o Slave chama este endpoint após executar cada sinal.
- */
 app.post('/signal/:slaveId/executed', (req, res) => {
   try {
     const slaveId = req.params.slaveId;
@@ -177,17 +132,9 @@ app.post('/signal/:slaveId/executed', (req, res) => {
   }
 });
 
-/**
- * GET /health
- * Health check
- */
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
-
-// =============================================================================
-// Inicialização
-// =============================================================================
 
 const HOST = process.env.HOST || '0.0.0.0';
 
