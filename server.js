@@ -12,7 +12,7 @@ app.use(express.json());
 
 const signals = [];
 
-const executedBySlave = new Map(); 
+const executedBySlave = new Map();    
 
 
 let nextSignalId = 1;
